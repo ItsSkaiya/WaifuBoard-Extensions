@@ -1,17 +1,9 @@
-const { load } = require("cheerio");
-// const { Dimension } = require("../../helpers/dimension"); // Removed
-
 class Gelbooru {
     baseUrl = "https://gelbooru.com";
 
-    constructor(baseURL) {
-        if (baseURL) {
-            if (baseURL.startsWith("http") || baseURL.startsWith("https")) {
-                this.baseUrl = baseURL;
-            } else {
-                this.baseUrl = `http://${baseURL}`;
-            }
-        }
+    constructor(fetchPath, cheerioPath) {
+        this.fetch = require(fetchPath);
+        this.load = require(cheerioPath).load;
     }
 
     async fetchSearchResult(query, page = 1, perPage = 42) {
@@ -19,17 +11,21 @@ class Gelbooru {
 
         const url = `${this.baseUrl}/index.php?page=post&s=list&tags=${query}&pid=${(page - 1) * perPage}`;
 
-        const response = await fetch(url);
+        const response = await this.fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
         const data = await response.text();
 
-        const $ = load(data);
+        const $ = this.load(data); 
 
         const results = [];
 
         $('.thumbnail-container a').each((i, e) => {
             const $e = $(e);
             const href = $e.attr('href');
-            
+
             const idMatch = href.match(/id=(\d+)/);
             const id = idMatch ? idMatch[1] : null;
 
@@ -48,7 +44,7 @@ class Gelbooru {
         });
 
         const pagination = $('.pagination a');
-        
+
         let totalPages = 1;
         pagination.each((i, e) => {
             const href = $(e).attr('href');
@@ -80,11 +76,15 @@ class Gelbooru {
     async fetchInfo(id) {
         const url = `${this.baseUrl}/index.php?page=post&s=view&id=${id}`;
 
-        const response = await fetch(url);
+        const response = await this.fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
         const original = await response.text();
 
-        const $ = load(original);
-        
+        const $ = this.load(original); 
+
         let fullImage;
 
         fullImage = $('#gelcom_img').attr('src') || $('#gelcom_mp4').attr('src');
@@ -104,20 +104,16 @@ class Gelbooru {
 
         const postedData = stats.find("li:contains('Posted:')").text().trim();
         const createdAt = new Date(postedData.split("Posted: ")[1]).getTime();
-        
+
         const publishedBy = stats.find("li:contains('User:') a").text().trim() || null;
 
-        // const sizeText = stats.find("li:contains('Size:')").text().trim().split("Size: ")[1]; // Removed
-        // const size = sizeText; // Removed
         const rating = stats.find("li:contains('Rating:')").text().trim().split("Rating: ")[1];
-        
-        // const dimension = Dimension.fromString(size); // Removed
 
         const comments = $('#comment-list .comment').map((i, el) => {
-            const $el = $(el);
-            const id = $el.attr('id')?.replace('c', '');
-            const user = $el.find('.comment-user a').text().trim();
-            const comment = $el.find('.comment-body').text().trim();
+            const $e = $(el);
+            const id = $e.attr('id')?.replace('c', '');
+            const user = $e.find('.comment-user a').text().trim();
+            const comment = $e.find('.comment-body').text().trim();
             return {
                 id,
                 user,
@@ -133,7 +129,7 @@ class Gelbooru {
             createdAt,
             publishedBy,
             rating,
-            // 'sizes' object removed
+
             comments
         }
     }
