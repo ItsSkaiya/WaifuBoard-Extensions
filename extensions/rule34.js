@@ -8,6 +8,7 @@ class Rule34 {
     constructor(fetchPath, cheerioPath) {
         this.fetch = require(fetchPath);
         this.cheerio = require(cheerioPath); 
+        this.type = "image-board";
     }
 
     async fetchSearchResult(query, page = 1, perPage = 42) { 

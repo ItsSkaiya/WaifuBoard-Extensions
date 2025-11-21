@@ -4,6 +4,7 @@ class Gelbooru {
     constructor(fetchPath, cheerioPath) {
         this.fetch = require(fetchPath);
         this.load = require(cheerioPath).load;
+        this.type = "image-board";
     }
 
     async fetchSearchResult(query, page = 1, perPage = 42) {

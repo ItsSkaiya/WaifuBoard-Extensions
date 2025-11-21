@@ -9,6 +9,7 @@ class Realbooru {
     constructor(fetchPath, cheerioPath) {
         this.fetch = require(fetchPath);
         this.cheerio = require(cheerioPath); 
+        this.type = "image-board";
     }
 
     LoadDoc(body) {
